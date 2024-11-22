@@ -23,7 +23,7 @@
     "typescript",
     "vevkit"
   ],
-  "author": "Your Name",
+  "author": "Johan Dahl",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.0.0",
