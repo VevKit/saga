@@ -9,7 +9,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsc",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
