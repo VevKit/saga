@@ -10,10 +10,11 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "jest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "test": "node --test --require ts-node/register src/__tests__/**/*.test.ts",
+    "test:watch": "node --test --watch --require ts-node/register src/__tests__/**/*.test.ts"
   },
   "publishConfig": {
     "access": "public"
@@ -26,14 +27,13 @@
   "author": "Johan Dahl",
   "license": "MIT",
   "devDependencies": {
-    "@types/jest": "^29.5.14",
     "@types/node": "^22.9.1",
     "@typescript-eslint/eslint-plugin": "^5.62.0",
     "@typescript-eslint/parser": "^5.62.0",
     "eslint": "^8.57.1",
-    "jest": "^29.7.0",
     "tsup": "^7.2.0",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "ts-node": "^10.9.1"
   },
   "peerDependencies": {
     "typescript": ">=4.0.0"

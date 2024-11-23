@@ -1,10 +1,13 @@
 import { LOG_LEVELS, LOG_SYMBOLS } from './constants';
 import type { Logger, LoggerConfig, LogLevel, LogEntry, LogFn } from './types';
+import { createTimestampFormatter } from './formatters';
 
 const defaultFormatters = {
-  timestamp: (date: Date) => date.toISOString(),
-  message: (entry: LogEntry) => 
-    `${entry.timestamp} ${entry.symbol} ${entry.message}`
+  timestamp: createTimestampFormatter({ preset: 'datetime' }),
+  message: (entry: LogEntry) => {
+    const timestamp = entry.timestamp ? `${entry.timestamp} ` : '';
+    return `${timestamp}${entry.symbol} ${entry.message}`;
+  }
 };
 
 const createLogEntry = (
@@ -29,6 +32,11 @@ const shouldLog = (messageLevel: LogLevel, configLevel: LogLevel = 'info'): bool
 const createBaseLogger = (config: LoggerConfig) => {
   const formatters = {
     ...defaultFormatters,
+    ...(config.timestamp ? {
+      timestamp: typeof config.timestamp === 'string'
+        ? createTimestampFormatter({ preset: config.timestamp })
+        : createTimestampFormatter(config.timestamp)
+    } : {}),
     ...config.formatters
   };
 

@@ -1,3 +1,5 @@
+import { TimestampConfig, TimestampFormatter, TimestampPreset } from "./formatters";
+
 export type LogLevel = 'success' | 'warning' | 'info' | 'debug';
 export type LogSymbol = '▲' | '▼' | '◆' | '●';
 
@@ -6,6 +8,7 @@ export interface LoggerConfig {
   pattern?: string;
   metadata?: Record<string, any>;
   formatters?: Formatters;
+  timestamp?: TimestampPreset | TimestampConfig;
 }
 
 export interface LogEntry {
@@ -17,7 +20,7 @@ export interface LogEntry {
 }
 
 export interface Formatters {
-  timestamp?: (date: Date) => string;
+  timestamp?: TimestampFormatter;
   message?: (entry: LogEntry) => string;
 }
 

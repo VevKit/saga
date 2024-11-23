@@ -13,6 +13,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
+  "include": ["src", "src/__tests__/*"],
   "exclude": ["node_modules", "dist", "tests"]
 }
