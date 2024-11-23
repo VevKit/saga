@@ -50,4 +50,29 @@ test('Logger Class Implementation', async (t) => {
       assert.match(logs[logs.length - 1], new RegExp(`.*${LOG_SYMBOLS.warning}.*Warning message`));
     });
   });
+
+  await t.test('timestamp formatting', async (t) => {
+    await t.test('supports different timestamp presets', () => {
+      logs.length = 0;
+
+      // Short time format
+      const shortLogger = new Logger({ timestamp: 'short' });
+      shortLogger.info('Short time message');
+      assert.match(logs[logs.length - 1], /^\d{2}:\d{2}:\d{2} ◆/);
+
+      // Date only format
+      const dateLogger = new Logger({ timestamp: 'date' });
+      dateLogger.info('Date message');
+      assert.match(logs[logs.length - 1], /^\d{4}-\d{2}-\d{2} ◆/);
+
+      // Custom format
+      const customLogger = new Logger({
+        timestamp: {
+          custom: (date) => `[${date.getHours()}h]`
+        }
+      });
+      customLogger.info('Custom time message');
+      assert.match(logs[logs.length - 1], /^\[\d{1,2}h\] ◆/);
+    });
+  });
 });
