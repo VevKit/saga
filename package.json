@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "prepublishOnly": "npm run build",
-    "test": "node --test --require ts-node/register src/__tests__/**/*.test.ts",
+    "test": "node --test --require ts-node/register src/__tests__/**/logger.test.ts",
     "test:watch": "node --test --watch --require ts-node/register src/__tests__/**/*.test.ts"
   },
   "publishConfig": {

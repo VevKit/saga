@@ -5,8 +5,10 @@ import { createTimestampFormatter } from './formatters';
 const defaultFormatters = {
   timestamp: createTimestampFormatter({ preset: 'datetime' }),
   message: (entry: LogEntry) => {
-    const timestamp = entry.timestamp ? `${entry.timestamp} ` : '';
-    return `${timestamp}${entry.symbol} ${entry.message}`;
+    // Only pass Date objects to the timestamp formatter
+    const timestampStr = entry.timestamp instanceof Date ? 
+      `${defaultFormatters.timestamp(entry.timestamp)} ` : '';
+    return `${timestampStr}${entry.symbol} ${entry.message}`;
   }
 };
 
@@ -40,12 +42,12 @@ const createBaseLogger = (config: LoggerConfig) => {
     ...config.formatters
   };
 
-  // Return a higher-order function that creates our LogFn
   return (level: LogLevel): LogFn => 
     (message: string, metadata?: Record<string, any>) => {
       if (!shouldLog(level, config.level)) return;
 
       const entry = createLogEntry(level, message, config, metadata);
+      // Now the entry.timestamp is always a Date
       const formattedMessage = formatters.message(entry);
       
       console.log(formattedMessage);

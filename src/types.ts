@@ -21,7 +21,7 @@ export interface LogEntry {
 
 export interface Formatters {
   timestamp?: TimestampFormatter;
-  message?: (entry: LogEntry) => string;
+  message: (entry: LogEntry) => string;
 }
 
 export type LogFn = (message: string, metadata?: Record<string, any>) => void;

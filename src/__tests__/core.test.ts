@@ -43,12 +43,40 @@ test('Basic logging functionality', async (t) => {
     infoLogger.warning('Warning message'); // Should be logged
     assert.match(logs[logs.length - 1], new RegExp(`.*${LOG_SYMBOLS.warning}.*Warning message`));
   });
+});
 
-  await t.test('includes ISO timestamp in logs', () => {
-    const logger = createLogger();
-    const isoDatePattern = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
-    
-    logger.info('Test message');
-    assert.match(logs[logs.length - 1], isoDatePattern);
+test('timestamp formatting options', async (t) => {
+  const logs: string[] = [];
+  const originalConsoleLog = console.log;
+  console.log = (message: string) => {
+    logs.push(message);
+  };
+
+  await t.test('supports different timestamp presets', () => {
+    // Short time format
+    const shortLogger = createLogger({ timestamp: 'short' });
+    shortLogger.info('Short time message');
+    assert.match(logs[logs.length - 1], /^\d{2}:\d{2}:\d{2} ◆/);
+
+    // Date only format
+    const dateLogger = createLogger({ timestamp: 'date' });
+    dateLogger.info('Date message');
+    assert.match(logs[logs.length - 1], /^\d{4}-\d{2}-\d{2} ◆/);
+
+    // No timestamp
+    const noTimeLogger = createLogger({ timestamp: 'none' });
+    noTimeLogger.info('No time message');
+    assert.match(logs[logs.length - 1], /^◆ No time message$/);
+
+    // Custom format
+    const customLogger = createLogger({
+      timestamp: {
+        custom: (date) => `[${date.getHours()}h]`
+      }
+    });
+    customLogger.info('Custom time message');
+    assert.match(logs[logs.length - 1], /^\[\d{1,2}h\] ◆/);
   });
-})
+
+  console.log = originalConsoleLog;
+});
