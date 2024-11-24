@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { Logger } from '../logger';
 import { ConsoleTransport, Transport } from '../transports/base';
 import { MemoryTransport } from '../transports/memory';
-import type { LoggerConfig, TransportError } from '../types';
+import { TransportValidationError, type LoggerConfig, type TransportError } from '../types';
 
 test('Transport system', async (t) => {
   await t.test('handles multiple transports consistently', () => {
@@ -246,5 +246,122 @@ test('Transport system', async (t) => {
     //   // Failing transport should be removed after threshold
     //   assert.equal(logger.getTransports().length, 2);
     // });
+  });
+  await t.test('transport validation', async (t) => {
+    await t.test('validates transport implementation', () => {
+      const logger = new Logger({
+        validation: { throwOnInvalid: true }
+      });
+    
+      // Invalid transport - not an object
+      assert.throws(
+        () => logger.addTransport(null as any),
+        {
+          name: 'TransportValidationError',
+          message: 'Transport must be an object'
+        }
+      );
+    
+      // Invalid transport - missing log method
+      assert.throws(
+        () => logger.addTransport({} as any),
+        {
+          name: 'TransportValidationError',
+          message: 'Transport must implement log() method'
+        }
+      );
+    
+      // Invalid transport - log is not a function
+      assert.throws(
+        () => logger.addTransport({ log: 'not a function' } as any),
+        {
+          name: 'TransportValidationError',
+          message: 'Transport must implement log() method'
+        }
+      );
+    
+      // Valid transport
+      const validTransport = new MemoryTransport();
+      assert.doesNotThrow(() => logger.addTransport(validTransport));
+    });
+  
+    await t.test('handles validation modes properly', () => {
+      // Test warning mode
+      const logger = new Logger({
+        validation: { throwOnInvalid: false }
+      });
+  
+      const warnings: string[] = [];
+      const originalWarn = console.warn;
+      console.warn = (message: string) => {
+        warnings.push(message);
+      };
+  
+      logger.addTransport({} as any);
+      assert.equal(warnings.length, 1);
+      assert.match(warnings[0], /Transport validation warning/);
+  
+      console.warn = originalWarn;
+    });
+  
+    await t.test('validates optional close method when required', () => {
+      const logger = new Logger({
+        validation: { 
+          throwOnInvalid: true,
+          requireClose: true
+        }
+      });
+  
+      const transportWithoutClose = {
+        log: () => {}
+      };
+  
+      assert.throws(
+        () => logger.addTransport(transportWithoutClose as Transport),
+        /must implement close\(\) method/
+      );
+  
+      const transportWithClose = {
+        log: () => {},
+        close: async () => {}
+      };
+  
+      assert.doesNotThrow(() => logger.addTransport(transportWithClose));
+    });
+  
+    await t.test('validates initial transports from config', () => {
+      const invalidTransport = {} as Transport;
+      const validTransport = new MemoryTransport();
+    
+      // With throwOnInvalid: false, should filter out invalid transports
+      const logger1 = new Logger({
+        transports: [invalidTransport, validTransport],
+        validation: { throwOnInvalid: false }
+      });
+    
+      assert.equal(logger1.getTransports().length, 1);
+    
+      // With throwOnInvalid: true, should throw
+      assert.throws(
+        () => new Logger({
+          transports: [invalidTransport, validTransport],
+          validation: { throwOnInvalid: true }
+        }),
+        {
+          name: 'TransportValidationError',
+          message: 'Transport must implement log() method'
+        }
+      );
+    });
+  
+    await t.test('falls back to console transport when all transports are invalid', () => {
+      const logger = new Logger({
+        transports: [{} as Transport],
+        validation: { throwOnInvalid: false }
+      });
+  
+      assert.equal(logger.getTransports().length, 1);
+      assert.ok(logger.getTransports()[0] instanceof ConsoleTransport);
+    });
   });
 });

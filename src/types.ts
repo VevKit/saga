@@ -10,6 +10,13 @@ export interface TransportError {
   entry: LogEntry;
 }
 
+export class TransportValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'TransportValidationError';
+  }
+}
+
 export interface LoggerConfig {
   level?: LogLevel;
   pattern?: string;
@@ -19,6 +26,10 @@ export interface LoggerConfig {
   transports?: Transport[];
   onTransportError?: (error: TransportError) => void;
   failureThreshold?: number; // Number of failures before removing transport
+  validation?: {
+    throwOnInvalid?: boolean;  // Whether to throw or just warn on validation failure
+    requireClose?: boolean;     // Whether to require close() method
+  };
 }
 
 export interface LogEntry {

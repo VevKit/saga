@@ -1,27 +1,43 @@
 import { LOG_LEVELS, LOG_SYMBOLS } from './constants';
 import { createTimestampFormatter } from './formatters';
 import { ConsoleTransport, type Transport } from './transports';
-import type { 
-  Logger as LoggerInterface,
-  LoggerConfig, 
-  LogLevel, 
-  LogEntry, 
-  LogFn,
-  Formatters
+import { 
+  type Logger as LoggerInterface,
+  type LoggerConfig, 
+  type LogLevel, 
+  type LogEntry, 
+  type LogFn,
+  type Formatters,
+  TransportValidationError
 } from './types';
 
 export class Logger implements LoggerInterface {
   private readonly config: LoggerConfig;
   private readonly formatters: Formatters;
-  private transports: Transport[];
+  private transports: Transport[] = [];
   private transportFailures: Map<Transport, number>;
 
   constructor(config: LoggerConfig = {}) {
     this.config = config;
     this.formatters = this.initializeFormatters(config);
-
-    this.transports = config.transports ?? [new ConsoleTransport()]; // Initialize with default console transport if none provided
     this.transportFailures = new Map();
+
+  // Handle initial transports
+  if (config.transports) {
+    if (config.validation?.throwOnInvalid) {
+      // If throwOnInvalid is true, validate all transports first
+      config.transports.forEach(t => this.validateTransport(t));
+      this.transports = [...config.transports];
+    } else {
+      // Otherwise, filter out invalid transports
+      this.transports = config.transports.filter(t => this.validateTransport(t));
+    }
+  }
+
+    // Use console transport if no valid transports
+    if (this.transports.length === 0) {
+      this.transports = [new ConsoleTransport()];
+    }
   }
 
   private async handleTransportError(transport: Transport, error: Error, entry: LogEntry): Promise<void> {
@@ -130,9 +146,44 @@ export class Logger implements LoggerInterface {
     });
   }
 
+  private validateTransport(transport: Transport): boolean {
+    const validationErrors: string[] = [];
+  
+    try {
+      // Check if transport is an object
+      if (!transport || typeof transport !== 'object') {
+        throw new TransportValidationError('Transport must be an object');
+      }
+  
+      // Check log method
+      if (typeof transport.log !== 'function') {
+        throw new TransportValidationError('Transport must implement log() method');
+      }
+  
+      // Check close method if required
+      if (this.config.validation?.requireClose && typeof transport.close !== 'function') {
+        throw new TransportValidationError('Transport must implement close() method');
+      }
+  
+      return true;
+    } catch (error) {
+      if (error instanceof TransportValidationError) {
+        if (this.config.validation?.throwOnInvalid) {
+          throw error;
+        } else {
+          console.warn(`Transport validation warning: ${error.message}`);
+          return false;
+        }
+      }
+      throw error;  // Re-throw unexpected errors
+    }
+  }
+
   // Transport management methods
   public addTransport(transport: Transport): void {
-    this.transports.push(transport);
+    if (this.validateTransport(transport)) {
+      this.transports.push(transport);
+    }
   }
 
   public removeTransport(transport: Transport): void {
