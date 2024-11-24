@@ -1,6 +1,6 @@
 {
   "name": "@vevkit/saga",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A functional, composable logging library for JavaScript/TypeScript applications",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
