@@ -18,6 +18,99 @@ A lightweight, modular logging system designed to be flexible and efficient. Sag
 npm install @vevkit/saga
 ```
 
+# @vevkit/saga
+
+> A powerful, Nordic-inspired logging library for JavaScript/TypeScript applications
+
+Part of the [VevKit](https://github.com/vevkit) ecosystem, `@vevkit/saga` provides a lightweight, pattern-based logging system that emphasizes clarity and meaningful status indicators.
+
+## Features
+
+- 🌟 Six distinct log levels with Nordic-inspired symbols
+- 🧬 Class-based architecture
+- 🎨 Visual log hierarchy
+- 🧩 Composable logging patterns
+- 🎯 TypeScript-first development
+- 🔍 Structured metadata support
+- 🌳 Hierarchical logger creation
+- 🎭 Flexible formatting options
+
+## Installation
+
+```bash
+npm install @vevkit/saga
+```
+
+## Quick Start
+
+```typescript
+import { createLogger } from '@vevkit/saga';
+
+// Create a base logger
+const logger = createLogger({ level: 'info' });
+
+// Log at different levels
+logger.critical('System crash imminent');     // ⚡ System crash imminent
+logger.error('Database connection failed');   // ✕ Database connection failed
+logger.success('Operation completed');        // ▲ Operation completed
+logger.warning('Resource running low');       // ▼ Resource running low
+logger.info('Processing request');           // ◆ Processing request
+logger.debug('Cache miss');                  // ● Cache miss
+
+// Add metadata
+logger.error('Authentication failed', { 
+  userId: '123', 
+  reason: 'invalid_token' 
+});
+
+// Create specialized logger
+const apiLogger = logger.child({
+  metadata: { service: 'api' }
+});
+
+apiLogger.warning('Rate limit approaching');
+```
+
+## Log Levels
+
+`@vevkit/saga` uses Nordic-inspired symbols to provide clear visual hierarchy in logs:
+
+| Level    | Symbol | Usage                                        | Example                           |
+|----------|--------|----------------------------------------------|-----------------------------------|
+| Critical | ⚡     | System-wide emergencies requiring immediate action | "Service completely unavailable" |
+| Error    | ✕      | Error conditions that need attention        | "Failed to connect to database"   |
+| Success  | ▲      | Successful operations and completions       | "Payment processed successfully"   |
+| Warning  | ▼      | Warning conditions or potential issues      | "High memory usage detected"      |
+| Info     | ◆      | General informational messages             | "Application started"             |
+| Debug    | ●      | Detailed debug information                 | "Cache hit for key: user:123"     |
+
+## Configuration
+
+```typescript
+interface LoggerConfig {
+  level?: 'critical' | 'error' | 'success' | 'warning' | 'info' | 'debug';
+  pattern?: string;
+  metadata?: Record<string, any>;
+  formatters?: {
+    timestamp?: (date: Date) => string;
+    message?: (entry: LogEntry) => string;
+  };
+}
+
+// Example configuration
+const logger = createLogger({
+  level: 'info',            // Minimum log level
+  metadata: {               // Global metadata
+    service: 'auth',
+    version: '1.0.0'
+  },
+  formatters: {            // Custom formatters
+    timestamp: (date) => date.toISOString(),
+    message: (entry) => `[${entry.timestamp}] ${entry.symbol} ${entry.message}`
+  }
+});
+```
+
 ## Basic Usage
 
 ### Simple Logging
