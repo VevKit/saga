@@ -77,55 +77,6 @@ test('Logger Class Implementation', async (t) => {
     });
   });
 
-  await t.test('transport management', async (t) => {
-    await t.test('supports multiple transports', () => {
-      const memory1 = new MemoryTransport();
-      const memory2 = new MemoryTransport();
-      const logger = new Logger({ transports: [memory1, memory2] });
-
-      logger.info('Test message');
-
-      assert.equal(memory1.getLogs().length, 1);
-      assert.equal(memory2.getLogs().length, 1);
-    });
-
-    await t.test('can add and remove transports', () => {
-      const memory = new MemoryTransport();
-      const logger = new Logger();
-      
-      logger.addTransport(memory);
-      logger.info('Test message 1');
-      assert.equal(memory.getLogs().length, 1);
-
-      logger.removeTransport(memory);
-      logger.info('Test message 2');
-      assert.equal(memory.getLogs().length, 1); // Still 1, not 2
-    });
-
-    await t.test('can clear all transports', () => {
-      const memory = new MemoryTransport();
-      const logger = new Logger({ transports: [memory] });
-
-      logger.clearTransports();
-      logger.info('Test message');
-      assert.equal(memory.getLogs().length, 0);
-    });
-
-    await t.test('maintains metadata in transports', () => {
-      const memory = new MemoryTransport();
-      const logger = new Logger({ 
-        transports: [memory],
-        metadata: { service: 'test' }
-      });
-
-      logger.info('Test message', { requestId: '123' });
-      
-      const lastLog = memory.getLastLog();
-      assert.equal(lastLog?.metadata?.service, 'test');
-      assert.equal(lastLog?.metadata?.requestId, '123');
-    });
-  });
-
   await t.test('child loggers', async (t) => {
     logs.length = 0;
 

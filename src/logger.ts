@@ -36,8 +36,13 @@ export class Logger implements LoggerInterface {
     return {
       timestamp: timestampFormatter,
       message: (entry: LogEntry) => {
-        const timestampStr = entry.timestamp instanceof Date ? 
+        // Only get timestamp string if we have a timestamp AND it's not 'none'
+        const hasTimestamp = entry.timestamp instanceof Date && 
+          (typeof config.timestamp !== 'string' || config.timestamp !== 'none');
+        
+        const timestampStr = hasTimestamp ? 
           `${timestampFormatter(entry.timestamp)} ` : '';
+  
         return `${timestampStr}${entry.symbol} ${entry.message}`;
       },
       ...config.formatters
