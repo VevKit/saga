@@ -75,4 +75,52 @@ test('Logger Class Implementation', async (t) => {
       assert.match(logs[logs.length - 1], /^\[\d{1,2}h\] ◆/);
     });
   });
+
+  await t.test('child loggers', async (t) => {
+    logs.length = 0;
+
+    const parentLogger = new Logger({
+      metadata: { service: 'main' }
+    });
+
+    const childLogger = parentLogger.child({
+      metadata: { component: 'auth' }
+    });
+
+    // Child should inherit parent metadata
+    assert.deepEqual(
+      childLogger.getConfig().metadata,
+      { service: 'main', component: 'auth' }
+    );
+
+    // Child should maintain its own config
+    const childConfig = childLogger.getConfig();
+    assert.deepEqual(childConfig.metadata, { service: 'main', component: 'auth' });
+
+    // Parent should remain unchanged
+    const parentConfig = parentLogger.getConfig();
+    assert.deepEqual(parentConfig.metadata, { service: 'main' });
+  });
+
+  await t.test('metadata handling', async (t) => {
+    logs.length = 0;
+
+    const logger = new Logger({
+      metadata: { service: 'test' },
+      formatters: {
+        message: (entry) => JSON.stringify(entry.metadata)
+      }
+    });
+
+    logger.info('Test message', { request_id: '123' });
+    const lastLog = JSON.parse(logs[logs.length - 1]);
+    assert.equal(lastLog.service, 'test');
+    assert.equal(lastLog.request_id, '123');
+  });
+
+  await t.test('static create method', () => {
+    const logger = Logger.create({ level: 'debug' });
+    assert.ok(logger instanceof Logger);
+    assert.equal(logger.getConfig().level, 'debug');
+  });
 });
