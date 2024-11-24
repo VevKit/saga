@@ -20,12 +20,6 @@ export interface Transport {
  */
 export class ConsoleTransport implements Transport {
   log(entry: LogEntry): void {
-    // Use the already formatted message from the entry
-    // This maintains consistency with our current logger output
-    const timestamp = entry.timestamp instanceof Date ? 
-      entry.timestamp.toISOString() : 
-      entry.timestamp;
-      
-    console.log(`${timestamp} ${entry.symbol} ${entry.message}`);
+    console.log(entry.formattedMessage);
   }
 }

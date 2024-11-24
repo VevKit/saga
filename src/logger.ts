@@ -1,5 +1,6 @@
 import { LOG_LEVELS, LOG_SYMBOLS } from './constants';
 import { createTimestampFormatter } from './formatters';
+import { ConsoleTransport, type Transport } from './transports';
 import type { 
   Logger as LoggerInterface,
   LoggerConfig, 
@@ -12,10 +13,14 @@ import type {
 export class Logger implements LoggerInterface {
   private readonly config: LoggerConfig;
   private readonly formatters: Formatters;
+  private transports: Transport[];
+
 
   constructor(config: LoggerConfig = {}) {
     this.config = config;
     this.formatters = this.initializeFormatters(config);
+
+    this.transports = config.transports ?? [new ConsoleTransport()]; // Initialize with default console transport if none provided
   }
 
   /**
@@ -26,19 +31,15 @@ export class Logger implements LoggerInterface {
       (typeof config.timestamp === 'string'
         ? createTimestampFormatter({ preset: config.timestamp })
         : createTimestampFormatter(config.timestamp))
-      : createTimestampFormatter({ preset: 'short' });
+      : createTimestampFormatter({ preset: 'datetime' });
 
-    const defaultFormatters: Formatters = {
+    return {
       timestamp: timestampFormatter,
       message: (entry: LogEntry) => {
         const timestampStr = entry.timestamp instanceof Date ? 
           `${timestampFormatter(entry.timestamp)} ` : '';
         return `${timestampStr}${entry.symbol} ${entry.message}`;
-      }
-    };
-
-    return {
-      ...defaultFormatters,
+      },
       ...config.formatters
     };
   }
@@ -78,8 +79,36 @@ export class Logger implements LoggerInterface {
 
     const entry = this.createLogEntry(level, message, metadata);
     const formattedMessage = this.formatters.message(entry);
-    
-    console.log(formattedMessage);
+
+    // Send formatted entry to all transports
+    const formattedEntry = {
+      ...entry,
+      formattedMessage
+    };
+
+    this.transports.forEach(transport => {
+      transport.log(formattedEntry);
+    });
+  }
+
+  // Transport management methods
+  public addTransport(transport: Transport): void {
+    this.transports.push(transport);
+  }
+
+  public removeTransport(transport: Transport): void {
+    const index = this.transports.indexOf(transport);
+    if (index > -1) {
+      this.transports.splice(index, 1);
+    }
+  }
+
+  public clearTransports(): void {
+    this.transports = [];
+  }
+
+  public getTransports(): Transport[] {
+    return [...this.transports]; // Return a copy to prevent external modification
   }
 
   // Public logging methods
@@ -113,9 +142,6 @@ export class Logger implements LoggerInterface {
     });
   }
 
-  /**
-   * Create a new logger with additional metadata
-   */
   public withMetadata(metadata: Record<string, any>): Logger {
     return this.child({ metadata });
   }

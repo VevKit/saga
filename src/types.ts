@@ -1,4 +1,5 @@
 import { TimestampConfig, TimestampFormatter, TimestampPreset } from "./formatters";
+import type { Transport } from "./transports";
 
 export type LogLevel = 'success' | 'warning' | 'info' | 'debug';
 export type LogSymbol = '▲' | '▼' | '◆' | '●';
@@ -9,6 +10,7 @@ export interface LoggerConfig {
   metadata?: Record<string, any>;
   formatters?: Formatters;
   timestamp?: TimestampPreset | TimestampConfig;
+  transports?: Transport[];
 }
 
 export interface LogEntry {
@@ -17,6 +19,7 @@ export interface LogEntry {
   message: string;
   timestamp: Date;
   metadata?: Record<string, any>;
+  formattedMessage?: string;
 }
 
 export interface Formatters {
@@ -33,4 +36,8 @@ export interface Logger {
   debug: LogFn;
   child: (config: Partial<LoggerConfig>) => Logger;
   withMetadata: (metadata: Record<string, any>) => Logger;
+  addTransport: (transport: Transport) => void;
+  removeTransport: (transport: Transport) => void;
+  clearTransports: () => void;
+  getTransports: () => Transport[];
 }
