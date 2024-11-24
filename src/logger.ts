@@ -26,7 +26,7 @@ export class Logger implements LoggerInterface {
       (typeof config.timestamp === 'string'
         ? createTimestampFormatter({ preset: config.timestamp })
         : createTimestampFormatter(config.timestamp))
-      : createTimestampFormatter({ preset: 'datetime' });
+      : createTimestampFormatter({ preset: 'short' });
 
     const defaultFormatters: Formatters = {
       timestamp: timestampFormatter,
