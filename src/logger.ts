@@ -202,6 +202,14 @@ export class Logger implements LoggerInterface {
   }
 
   // Public logging methods
+  critical(message: string, metadata?: Record<string, any>): void {
+    this.log('critical', message, metadata);
+  }
+
+  error(message: string, metadata?: Record<string, any>): void {
+    this.log('error', message, metadata);
+  }
+
   public success(message: string, metadata?: Record<string, any>): void {
     this.log('success', message, metadata);
   }

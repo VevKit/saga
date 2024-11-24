@@ -23,6 +23,12 @@ test('Logger Class Implementation', async (t) => {
     await t.test('logs messages with correct level symbols', () => {
       const logger = new Logger({ level: 'debug' });
 
+      logger.critical('Critical message');
+      assert.match(logs[logs.length - 1], new RegExp(`.*${LOG_SYMBOLS.critical}.*Critical message`));
+
+      logger.error('Error message');
+      assert.match(logs[logs.length - 1], new RegExp(`.*${LOG_SYMBOLS.error}.*Error message`));
+
       logger.success('Success message');
       assert.match(logs[logs.length - 1], new RegExp(`.*${LOG_SYMBOLS.success}.*Success message`));
 

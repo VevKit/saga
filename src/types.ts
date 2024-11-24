@@ -1,8 +1,8 @@
 import { TimestampConfig, TimestampFormatter, TimestampPreset } from "./formatters";
 import type { Transport } from "./transports";
 
-export type LogLevel = 'success' | 'warning' | 'info' | 'debug';
-export type LogSymbol = '▲' | '▼' | '◆' | '●';
+export type LogLevel = 'critical' | 'error' | 'success' | 'warning' | 'info' | 'debug';
+export type LogSymbol = '⚡' | '✕' | '▲' | '▼' | '◆' | '●';
 
 export interface TransportError {
   transport: Transport;
@@ -49,6 +49,8 @@ export interface Formatters {
 export type LogFn = (message: string, metadata?: Record<string, any>) => void;
 
 export interface Logger {
+  critical: LogFn;
+  error: LogFn;
   success: LogFn;
   warning: LogFn;
   info: LogFn;
