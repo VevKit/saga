@@ -14,13 +14,47 @@ export class Logger implements LoggerInterface {
   private readonly config: LoggerConfig;
   private readonly formatters: Formatters;
   private transports: Transport[];
-
+  private transportFailures: Map<Transport, number>;
 
   constructor(config: LoggerConfig = {}) {
     this.config = config;
     this.formatters = this.initializeFormatters(config);
 
     this.transports = config.transports ?? [new ConsoleTransport()]; // Initialize with default console transport if none provided
+    this.transportFailures = new Map();
+  }
+
+  private async handleTransportError(transport: Transport, error: Error, entry: LogEntry): Promise<void> {
+    // Call error handler if provided
+    if (this.config.onTransportError) {
+      this.config.onTransportError({ transport, error, entry });
+    }
+
+    // Track failures
+    const currentFailures = (this.transportFailures.get(transport) || 0) + 1;
+    this.transportFailures.set(transport, currentFailures);
+
+    // Check if we should remove the transport
+    if (this.config.failureThreshold && currentFailures >= this.config.failureThreshold) {
+      this.removeTransport(transport);
+      // Clean up failure count
+      this.transportFailures.delete(transport);
+      
+      // If this was the last transport, add console transport as fallback
+      if (this.transports.length === 0) {
+        this.addTransport(new ConsoleTransport());
+      }
+    }
+  }
+
+  private async tryTransportLog(transport: Transport, entry: LogEntry): Promise<void> {
+    try {
+      transport.log(entry);
+      // Reset failure count on success
+      this.transportFailures.delete(transport);
+    } catch (error) {
+      await this.handleTransportError(transport, error as Error, entry);
+    }
   }
 
   /**
@@ -92,7 +126,7 @@ export class Logger implements LoggerInterface {
     };
 
     this.transports.forEach(transport => {
-      transport.log(formattedEntry);
+      this.tryTransportLog(transport, formattedEntry);
     });
   }
 
@@ -156,6 +190,13 @@ export class Logger implements LoggerInterface {
    */
   public getConfig(): Readonly<LoggerConfig> {
     return Object.freeze({ ...this.config });
+  }
+
+  public getTransportStatus(): Array<{ transport: Transport; failures: number }> {
+    return this.transports.map(transport => ({
+      transport,
+      failures: this.transportFailures.get(transport) || 0
+    }));
   }
 
   /**

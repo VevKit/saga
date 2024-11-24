@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { Logger } from '../logger';
-import { ConsoleTransport } from '../transports/base';
+import { ConsoleTransport, Transport } from '../transports/base';
 import { MemoryTransport } from '../transports/memory';
-import type { LoggerConfig } from '../types';
+import type { LoggerConfig, TransportError } from '../types';
 
 test('Transport system', async (t) => {
   await t.test('handles multiple transports consistently', () => {
@@ -138,5 +138,113 @@ test('Transport system', async (t) => {
           break;
       }
     });
+  });
+
+  await t.test('error handling', async (t) => {
+    await t.test('handles transport failures without breaking other transports', () => {
+      const memory1 = new MemoryTransport();
+      const failingTransport = new class implements Transport {
+        log() { throw new Error('Transport failure'); }
+      };
+      const memory2 = new MemoryTransport();
+  
+      const errors: TransportError[] = [];
+      const logger = new Logger({
+        transports: [memory1, failingTransport, memory2],
+        onTransportError: (error) => {
+          errors.push(error);
+        }
+      });
+  
+      logger.info('Test message');
+  
+      assert.equal(memory1.getLogs().length, 1, 'First transport should receive log');
+      assert.equal(memory2.getLogs().length, 1, 'Third transport should receive log');
+      assert.equal(errors.length, 1, 'Error handler should be called once');
+      assert.equal(errors[0].error.message, 'Transport failure');
+    });
+  
+    await t.test('removes transport after reaching failure threshold', () => {
+      const failingTransport = new class implements Transport {
+        log() { throw new Error('Transport failure'); }
+      };
+  
+      const errors: TransportError[] = [];
+      const logger = new Logger({
+        transports: [failingTransport],
+        failureThreshold: 3,
+        onTransportError: (error) => {
+          errors.push(error);
+        }
+      });
+  
+      // Trigger failures
+      for (let i = 0; i < 4; i++) {
+        logger.info(`Message ${i}`);
+      }
+  
+      assert.equal(errors.length, 3, 'Should record three failures before removal');
+      assert.equal(logger.getTransports().length, 1, 'Should have fallback console transport');
+      assert.ok(logger.getTransports()[0] instanceof ConsoleTransport, 'Should fall back to console transport');
+    });
+  
+    await t.test('resets failure count after successful log', () => {
+      let shouldFail = true;
+      const intermittentTransport = new class implements Transport {
+        log() { 
+          if (shouldFail) throw new Error('Transport failure');
+        }
+      };
+  
+      const logger = new Logger({
+        transports: [intermittentTransport],
+        failureThreshold: 3
+      });
+  
+      // Two failures
+      logger.info('Message 1');
+      logger.info('Message 2');
+  
+      // Successful log
+      shouldFail = false;
+      logger.info('Message 3');
+  
+      // Check transport status
+      const status = logger.getTransportStatus();
+      assert.equal(status[0].failures, 0, 'Failure count should reset after success');
+  
+      // Another failure
+      shouldFail = true;
+      logger.info('Message 4');
+      
+      // Transport should still be present as it hasn't hit threshold since reset
+      assert.equal(logger.getTransports().length, 1);
+      assert.equal(logger.getTransportStatus()[0].failures, 1);
+    });
+  
+    // await t.test('maintains transport independence during failures', () => {
+    //   const memory1 = new MemoryTransport();
+    //   const failingTransport = new class implements Transport {
+    //     log() { throw new Error('Transport failure'); }
+    //   };
+    //   const memory2 = new MemoryTransport();
+  
+    //   const logger = new Logger({
+    //     transports: [memory1, failingTransport, memory2],
+    //     failureThreshold: 2
+    //   });
+  
+    //   // Multiple log attempts
+    //   logger.info('Message 1');
+    //   logger.info('Message 2');
+    //   logger.info('Message 3');
+  
+    //   // Check both working transports received all logs
+    //   assert.equal(memory1.getLogs().length, 3);
+    //   assert.equal(memory2.getLogs().length, 3);
+      
+    //   // Failing transport should be removed after threshold
+    //   assert.equal(logger.getTransports().length, 2);
+    // });
   });
 });

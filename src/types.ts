@@ -4,6 +4,12 @@ import type { Transport } from "./transports";
 export type LogLevel = 'success' | 'warning' | 'info' | 'debug';
 export type LogSymbol = '▲' | '▼' | '◆' | '●';
 
+export interface TransportError {
+  transport: Transport;
+  error: Error;
+  entry: LogEntry;
+}
+
 export interface LoggerConfig {
   level?: LogLevel;
   pattern?: string;
@@ -11,6 +17,8 @@ export interface LoggerConfig {
   formatters?: Formatters;
   timestamp?: TimestampPreset | TimestampConfig;
   transports?: Transport[];
+  onTransportError?: (error: TransportError) => void;
+  failureThreshold?: number; // Number of failures before removing transport
 }
 
 export interface LogEntry {
