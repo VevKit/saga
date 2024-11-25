@@ -11,11 +11,12 @@
   ],
   "scripts": {
     "build": "tsc",
+    "dev": "tsx watch src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "prepublishOnly": "npm run build",
-    "test": "node --test --require ts-node/register src/__tests__/**/*.test.ts",
-    "test:watch": "node --test --watch --require ts-node/register src/__tests__/**/*.test.ts"
+    "test": "node --import tsx --test src/__tests__/*.test.ts",
+    "test:watch": "node --import tsx --test --watch src/__tests__/*.test.ts"
   },
   "publishConfig": {
     "access": "public"
@@ -34,7 +35,7 @@
     "eslint": "^8.57.1",
     "tsup": "^7.2.0",
     "typescript": "^5.6.3",
-    "ts-node": "^10.9.1"
+    "tsx": "^4.7.0"
   },
   "peerDependencies": {
     "typescript": ">=4.0.0"
